@@ -7,7 +7,7 @@ pipeline{
     stage('1GetCode'){
       steps{
         sh "echo 'cloning the latest application version' "
-        checkout scmGit(branches: [[name: '*/master']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/Lion-Technology-Solutions/liontech-welcomeapp-cicd-pipelines.git']])
+        git branch: '*/*', url: 'https://github.com/Lion-Technology-Solutions/liontech-welcomeapp-cicd-pipelines.git'
       }
     }
     stage('3Test+Build'){

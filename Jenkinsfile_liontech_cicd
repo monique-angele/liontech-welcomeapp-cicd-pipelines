@@ -1,0 +1,52 @@
+node{
+  def mavenHome = tool name: 'maven3.9.0'
+  stage('1cloneCode'){
+    git 'https://github.com/Lion-Technology-Solutions/liontech-web-app-jenkins-cicd.git'
+  }
+  stage('2Test&Build'){
+    sh "${mavenHome}/bin/mvn clean package"
+    //bat "${mavenHome}/bin/mvn clean package"
+  }
+  stage('3codeQuality'){
+    sh "${mavenHome}/bin/mvn  sonar:sonar"
+  }
+  stage('4uploadArtifacts'){
+    //sh "${mavenHome}/bin/mvn deploy"
+    //http://52.53.227.31:8191/landmark/repository/tesla-fe-snapshots/
+    //http://52.53.227.31:8191/landmark/repository/tesla-fe-releases/
+    // vi pom.xml and added repository details   
+    // vi setting.xml and add AUTHENTICATION details  
+  } 
+  stage('5deploy2UAT'){
+    sh "echo 'deploy to UAT'  "
+   deploy adapters: [tomcat9(credentialsId: 'liontech-deployer', path: '', url: 'http://3.98.138.118:8009/')], contextPath: 'app3', war: 'target/*.war'
+  }
+  stage('6approvalGate'){
+    sh "echo 'ready for review' "
+    timeout(time:5, unit:'DAYS') {
+    input message: 'Application ready for deployment, Please review and approve'
+      }
+  }
+  stage('7deploy2Prod'){
+    sh "sleep  50"
+    deploy adapters: [tomcat9(credentialsId: 'liontech-deployer', path: '', url: 'http://3.98.138.118:8009/')], contextPath: 'app3', war: 'target/*.war'
+  }
+
+  stage('congratulations') {
+
+    echo 'congratulations  Lion Tech Engineers'
+  }
+
+  stage ('send MS Teams Notifications'){
+
+    office365ConnectorSend message: 'liontech devops engineers, we are unstopable', webhookUrl: 'https://liontechacademy.webhook.office.com/webhookb2/69fa68d2-9fe7-4e6f-975a-7e5715e102a6@b290c85e-0692-4ada-8f25-2a3b60aca73e/JenkinsCI/7f4fa873f74d4def83a01d2a8166ff0b/90dc930a-1d3a-4c50-9c2d-39d010312f55'
+  }
+            
+  stage('8emailNotification'){
+    emailext body: '''Hi All,
+
+Check Build status.
+
+Lion Techologies''', recipientProviders: [buildUser(), developers(), upstreamDevelopers(), brokenBuildSuspects(), brokenTestsSuspects(), contributor()], subject: 'build status', to: 'info@liontechacademy.com'
+  }
+}
